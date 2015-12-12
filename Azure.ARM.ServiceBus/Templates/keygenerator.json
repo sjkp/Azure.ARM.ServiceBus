@@ -1,0 +1,22 @@
+﻿{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+  "parameters": {
+    "seed": {
+      "type": "string",
+      "minLength": 6,
+      "maxLength": 6
+    }
+  },
+  "variables": {
+    "uniqueString":  "[concat(uniqueString(resourceGroup().id, deployment().name,parameters('seed')),parameters('seed'), uniqueString(resourceGroup().id,parameters('seed')))]"
+  },
+    "resources": [
+    ],
+  "outputs": {
+    "key": {
+      "value": "[base64(variables('uniqueString'))]",
+      "type": "string"
+    }
+  }
+}

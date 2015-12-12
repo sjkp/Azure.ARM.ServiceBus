@@ -1,0 +1,102 @@
+﻿{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "sbNamespace": {
+      "type": "string",
+      "metadata": {
+        "description": "The service bus namespace"
+      }
+    }
+  },
+  "variables": {
+    "location": "[resourceGroup().location]",
+    "sbVersion": "[providers('Microsoft.ServiceBus', 'namespaces').apiVersions[0]]",
+    "topicName": "testTopic",
+    "topicSubscriptionName": "testSubscription"
+  },
+  "resources": [
+    {
+      "apiVersion": "2015-01-01",
+      "name": "primaryKey",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "incremental",
+        "templateLink": {
+          "uri": "https://www.contoso.com/AzureTemplates/newStorageAccount.json",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "seed": { "value": "1234a5" }
+        }
+      }
+    },
+    {
+      "apiVersion": "2015-01-01",
+      "name": "secondaryKey",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "incremental",
+        "templateLink": {
+          "uri": "https://www.contoso.com/AzureTemplates/newStorageAccount.json",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "seed": { "value": "ac34a5" }
+        }
+      }
+    },
+    {
+      "apiVersion": "[variables('sbVersion')]",
+      "name": "[parameters('sbNamespace')]",
+      "type": "Microsoft.ServiceBus/namespaces",
+      "location": "[variables('location')]",
+      "resources": [
+        {
+          "apiVersion": "[variables('sbVersion')]",
+          "name": "[variables('topicName')]",
+          "type": "Topics",
+          "dependsOn": [
+            "[concat('Microsoft.ServiceBus/namespaces/', parameters('sbNamespace'))]"
+          ],
+          "properties": {
+            "path": "[variables('topicName')]"
+          },
+          "resources": [
+            {
+              "apiVersion": "[variables('sbVersion')]",
+              "name": "[variables('topicSubscriptionName')]",
+              "type": "Subscriptions",
+              "dependsOn": [
+                "[variables('topicName')]"
+              ],
+              "properties": {
+              }
+            }
+          ]
+        },
+        {
+          "apiVersion": "[variables('sbVersion')]",
+          "name": "[concat(parameters('sbNamespace'),'/SendOnlyKey')]",
+          "type": "Microsoft.ServiceBus/namespaces/authorizationRules",
+          "dependsOn": [
+            "[concat('Microsoft.EventHub/namespaces/', parameters('sbNamespace'))]"
+          ],
+          "location": "[variables('location')]",
+          "properties": {
+            "KeyName": "SendOnlyKey",
+            "ClaimType": "SendSharedAccessKey",
+            "ClaimValue": "None",
+            "PrimaryKey": "[reference('primaryKey').outputs.key.value",
+            "SecondaryKey": "[reference('secondaryKey').outputs.key.value",
+            "Rights": [ "Send" ],
+            "Revision": -1
+          }
+        }
+      ]
+    }
+  ],
+  "outputs": {
+
+  }
+}
