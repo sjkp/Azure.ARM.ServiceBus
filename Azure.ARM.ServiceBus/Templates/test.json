@@ -1,0 +1,33 @@
+﻿{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+  "parameters": {
+  },
+  "variables": {
+    "keyGeneratorTemplateUri": "https://raw.githubusercontent.com/sjkp/Azure.ARM.ServiceBus/master/Azure.ARM.ServiceBus/Templates/keygenerator.json"
+  },
+  "resources": [
+    {
+      "apiVersion": "2015-01-01",
+      "name": "primaryKey",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "incremental",
+        "templateLink": {
+          "uri": "[variables('keyGeneratorTemplateUri')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "seed": { "value": "ac34a5" }
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "key": {
+      "type": "string",
+      "value": "[reference('primaryKey').outputs.key.value]"
+
+    }
+  }
+}

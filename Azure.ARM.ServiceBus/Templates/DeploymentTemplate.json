@@ -13,7 +13,11 @@
     "location": "[resourceGroup().location]",
     "sbVersion": "[providers('Microsoft.ServiceBus', 'namespaces').apiVersions[0]]",
     "topicName": "testTopic",
-    "topicSubscriptionName": "testSubscription"
+    "defaultSASKeyName": "RootManageSharedAccessKey",
+    "authRuleResourceId": "[resourceId('Microsoft.ServiceBus/namespaces/authorizationRules', parameters('sbNamespace'), variables('defaultSASKeyName'))]",
+    "sendAuthRuleResourceId": "[resourceId('Microsoft.ServiceBus/namespaces/authorizationRules', parameters('sbNamespace'), 'SendOnlyKey')]",
+    "topicSubscriptionName": "testSubscription",
+    "keyGeneratorTemplateUri": "https://raw.githubusercontent.com/sjkp/Azure.ARM.ServiceBus/master/Azure.ARM.ServiceBus/Templates/keygenerator.json"
   },
   "resources": [
     {
@@ -23,7 +27,7 @@
       "properties": {
         "mode": "incremental",
         "templateLink": {
-          "uri": "https://www.contoso.com/AzureTemplates/newStorageAccount.json",
+          "uri": "[variables('keyGeneratorTemplateUri')]",
           "contentVersion": "1.0.0.0"
         },
         "parameters": {
@@ -38,7 +42,7 @@
       "properties": {
         "mode": "incremental",
         "templateLink": {
-          "uri": "https://www.contoso.com/AzureTemplates/newStorageAccount.json",
+          "uri": "[variables('keyGeneratorTemplateUri')]",
           "contentVersion": "1.0.0.0"
         },
         "parameters": {
@@ -51,6 +55,9 @@
       "name": "[parameters('sbNamespace')]",
       "type": "Microsoft.ServiceBus/namespaces",
       "location": "[variables('location')]",
+      "properties": {
+        "messagingSku": 2
+      },
       "resources": [
         {
           "apiVersion": "[variables('sbVersion')]",
@@ -80,15 +87,17 @@
           "name": "[concat(parameters('sbNamespace'),'/SendOnlyKey')]",
           "type": "Microsoft.ServiceBus/namespaces/authorizationRules",
           "dependsOn": [
-            "[concat('Microsoft.EventHub/namespaces/', parameters('sbNamespace'))]"
+            "[concat('Microsoft.ServiceBus/namespaces/', parameters('sbNamespace'))]",
+            "[concat('Microsoft.Resources/deployments/', 'primaryKey')]",
+            "[concat('Microsoft.Resources/deployments/', 'secondaryKey')]"
           ],
           "location": "[variables('location')]",
           "properties": {
             "KeyName": "SendOnlyKey",
             "ClaimType": "SendSharedAccessKey",
             "ClaimValue": "None",
-            "PrimaryKey": "[reference('primaryKey').outputs.key.value",
-            "SecondaryKey": "[reference('secondaryKey').outputs.key.value",
+            "PrimaryKey": "[reference('primaryKey').outputs.key.value]",
+            "SecondaryKey": "[reference('secondaryKey').outputs.key.value]",
             "Rights": [ "Send" ],
             "Revision": -1
           }
@@ -97,6 +106,13 @@
     }
   ],
   "outputs": {
-
+    "NamespaceDefaultConnectionString": {
+      "type": "string",
+      "value": "[listkeys(variables('authRuleResourceId'), variables('sbVersion')).primaryConnectionString]"
+    },
+    "SendOnlyConnectionString": {
+      "type": "string",
+      "value": "[listkeys(variables('sendAuthRuleResourceId'), variables('sbVersion')).primaryConnectionString]"
+    }
   }
 }

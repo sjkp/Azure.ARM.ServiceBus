@@ -38,6 +38,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Templates\keygenerator.json" />
+    <None Include="Templates\test.json" />
     <None Include="Tools\AzCopy.exe" />
     <None Include="Tools\Microsoft.Data.Edm.dll">
       <Visible>False</Visible>
