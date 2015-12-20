@@ -1,0 +1,91 @@
+﻿{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "sbNamespace": {
+      "type": "string",
+      "metadata": {
+        "description": "The service bus namespace"
+      }
+
+    },
+    "primaryKey": {
+      "type": "string",
+      "defaultValue": "DG4TcCs+XnDN83VZcT2e5NfVeSFvTuiYUiWtXhxnJ2s="
+    },
+    "secondaryKey": {
+      "type": "string",
+      "defaultValue": "tegikp1IoeEFCF9NRSV78nYomDlFjsz21X9aVKPL4Eo="
+    }
+  },
+  "variables": {
+    "location": "[resourceGroup().location]",
+    "sbVersion": "[providers('Microsoft.ServiceBus', 'namespaces').apiVersions[0]]",
+    "namespaceName": "[concat(parameters('sbNamespace'),uniqueString(resourceGroup().id))]",   
+    "queueName": "testQueue"
+  },
+  "resources": [
+    {
+      "apiVersion": "[variables('sbVersion')]",
+      "name": "[variables('namespaceName')]",
+      "type": "Microsoft.ServiceBus/namespaces",
+      "location": "[variables('location')]",
+      "properties": {
+        "messagingSku": 2
+      },
+      "resources": [
+        {
+          "apiVersion": "[variables('sbVersion')]",
+          "name": "[variables('queueName')]",
+          "type": "Queues",
+          "dependsOn": [
+            "[concat('Microsoft.ServiceBus/namespaces/', variables('namespaceName'))]"
+          ],
+          "properties": {
+            "path": "[variables('queueName')]"
+          },
+          "resources": [
+            {
+              "apiVersion": "[variables('sbVersion')]",
+              "name": "ReadOnlyKey",
+              "type": "AuthorizationRules",
+              "dependsOn": [
+                "[variables('queueName')]"
+              ],
+              "properties": {
+                "keyName": "ReadOnlyKey",
+                "claimType": "SharedAccessKey",
+                "claimValue": "None",
+                "primaryKey": "[parameters('primaryKey')]",
+                "secondaryKey": "[parameters('secondaryKey')]",
+                "rights": [ "Send" ],
+                "revision": -1
+              }
+            },
+            {
+              "apiVersion": "[variables('sbVersion')]",
+              "name": "ListenOnlyKey",
+              "type": "AuthorizationRules",
+              "dependsOn": [
+                "[variables('queueName')]"
+              ],
+              "properties": {
+                "keyName": "ListenOnlyKey",
+                "claimType": "SharedAccessKey",
+                "claimValue": "None",
+                "primaryKey": "[parameters('primaryKey')]",
+                "secondaryKey": "[parameters('secondaryKey')]",
+                "rights": [ "Listen" ],
+                "revision": -1
+              }
+            }
+          ]
+        }
+
+      ]
+    }
+  ],
+  "outputs": {
+
+  }
+}
