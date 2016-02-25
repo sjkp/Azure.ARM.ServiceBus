@@ -11,11 +11,12 @@
   },
   "variables": {
     "location": "[resourceGroup().location]",
-    "sbVersion": "[providers('Microsoft.ServiceBus', 'namespaces').apiVersions[0]]",
+    "sbVersion": "2014-09-01",
+    "sbNamespace": "[concat(parameters('sbNamespace'),uniqueString(resourceGroup().id))]",
     "topicName": "testTopic",
     "defaultSASKeyName": "RootManageSharedAccessKey",
-    "authRuleResourceId": "[resourceId('Microsoft.ServiceBus/namespaces/authorizationRules', parameters('sbNamespace'), variables('defaultSASKeyName'))]",
-    "sendAuthRuleResourceId": "[resourceId('Microsoft.ServiceBus/namespaces/authorizationRules', parameters('sbNamespace'), 'SendOnlyKey')]",
+    "authRuleResourceId": "[resourceId('Microsoft.ServiceBus/namespaces/authorizationRules', variables('sbNamespace'), variables('defaultSASKeyName'))]",
+    "sendAuthRuleResourceId": "[resourceId('Microsoft.ServiceBus/namespaces/authorizationRules', variables('sbNamespace'), 'SendOnlyKey')]",
     "topicSubscriptionName": "testSubscription",
     "keyGeneratorTemplateUri": "https://raw.githubusercontent.com/sjkp/Azure.ARM.ServiceBus/master/Azure.ARM.ServiceBus/Templates/keygenerator.json"
   },
@@ -52,7 +53,7 @@
     },
     {
       "apiVersion": "[variables('sbVersion')]",
-      "name": "[parameters('sbNamespace')]",
+      "name": "[variables('sbNamespace')]",
       "type": "Microsoft.ServiceBus/namespaces",
       "location": "[variables('location')]",
       "properties": {
@@ -64,7 +65,7 @@
           "name": "[variables('topicName')]",
           "type": "Topics",
           "dependsOn": [
-            "[concat('Microsoft.ServiceBus/namespaces/', parameters('sbNamespace'))]"
+            "[concat('Microsoft.ServiceBus/namespaces/', variables('sbNamespace'))]"
           ],
           "properties": {
             "path": "[variables('topicName')]"
@@ -84,10 +85,10 @@
         },
         {
           "apiVersion": "[variables('sbVersion')]",
-          "name": "[concat(parameters('sbNamespace'),'/SendOnlyKey')]",
+          "name": "[concat(variables('sbNamespace'),'/SendOnlyKey')]",
           "type": "Microsoft.ServiceBus/namespaces/authorizationRules",
           "dependsOn": [
-            "[concat('Microsoft.ServiceBus/namespaces/', parameters('sbNamespace'))]",
+            "[concat('Microsoft.ServiceBus/namespaces/', variables('sbNamespace'))]",
             "[concat('Microsoft.Resources/deployments/', 'primaryKey')]",
             "[concat('Microsoft.Resources/deployments/', 'secondaryKey')]"
           ],
